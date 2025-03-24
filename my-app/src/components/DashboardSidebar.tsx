@@ -18,31 +18,14 @@ export function DashboardSidebar({
   rewardPoints = 0
 }: DashboardSidebarProps) {
   const navItems = [
-    {
-      icon: <Home className="w-5 h-5" />,
-      label: "Home",
-      value: "home"
-    },
+
     {
       icon: <FileText className="w-5 h-5" />,
       label: "Read PDF",
       value: "readPDF"
     },
-    {
-      icon: <MessageSquare className="w-5 h-5" />,
-      label: "Chat",
-      value: "chat"
-    },
-    {
-      icon: <Upload className="w-5 h-5" />,
-      label: "Upload Files",
-      value: "upload"
-    },
-    {
-      icon: <User className="w-5 h-5" />,
-      label: "Profile",
-      value: "profile"
-    }
+ 
+   
   ];
 
   return (

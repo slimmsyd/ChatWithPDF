@@ -300,13 +300,13 @@ export default function ReadPDFPage() {
               <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
                 <h1 className="text-xl font-semibold text-gray-800 flex items-center">
                   <PDFIcon className="h-5 w-5 mr-2 text-[#2BAC3E]" />
-                  PDF Reader
+                  SE SUITE
                 </h1>
-                <p className="text-sm text-gray-500">Upload a PDF and chat with it</p>
+                <p className="text-sm text-gray-500">Intelligent document processing and analysis</p>
               </div>
             )}
             
-            <div className="flex-1 p-4 overflow-auto">
+            <div className="flex-1 p-4 overflow-auto bg-gradient-to-br from-white to-[#F8F9FF]">
               {!pdfUrl ? (
                 <div 
                   ref={dropAreaRef}
@@ -317,15 +317,15 @@ export default function ReadPDFPage() {
                   onDrop={handleDrop}
                 >
                   <Card 
-                    className={`w-full max-w-md border-dashed border-2 ${
+                    className={`w-full max-w-md border ${
                       dragActive 
-                        ? 'border-[#2BAC3E] bg-[#2BAC3E]/5' 
+                        ? 'border-[#2BAC3E] bg-[#2BAC3E]/5 shadow-lg shadow-[#2BAC3E]/10' 
                         : dragError 
                           ? 'border-red-400 bg-red-50' 
-                          : 'border-gray-300 bg-gray-50'
-                    } transition-colors duration-200`}
+                          : 'border-gray-200 bg-white/80 backdrop-blur-sm'
+                    } transition-all duration-300 rounded-xl`}
                   >
-                    <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
+                    <CardContent className="flex flex-col items-center justify-center p-8 space-y-6">
                       {dragError ? (
                         <div className="text-red-500 flex items-center gap-2">
                           <AlertCircle className="h-5 w-5" />
@@ -333,13 +333,15 @@ export default function ReadPDFPage() {
                         </div>
                       ) : (
                         <>
-                          <PDFIcon className={`h-16 w-16 ${dragActive ? 'text-[#2BAC3E]' : 'text-gray-400'}`} />
-                          <CardTitle className={`text-xl font-medium ${dragActive ? 'text-[#2BAC3E]' : 'text-gray-700'}`}>
+                          <div className={`w-20 h-20 rounded-full flex items-center justify-center ${dragActive ? 'bg-[#2BAC3E]/10' : 'bg-gray-50'} transition-all duration-300`}>
+                            <PDFIcon className={`h-10 w-10 ${dragActive ? 'text-[#2BAC3E]' : 'text-gray-400'} transition-colors duration-300`} />
+                          </div>
+                          <CardTitle className={`text-2xl font-medium ${dragActive ? 'text-[#2BAC3E]' : 'text-gray-700'} transition-colors duration-300`}>
                             {dragActive ? 'Drop PDF here' : 'Upload a PDF'}
                           </CardTitle>
                         </>
                       )}
-                      <p className="text-sm text-gray-500 text-center">
+                      <p className="text-sm text-gray-500 text-center max-w-xs">
                         {dragActive 
                           ? 'Release to upload your PDF file' 
                           : 'Drag and drop a PDF file here, or click the button below to select one'}
@@ -353,7 +355,7 @@ export default function ReadPDFPage() {
                       />
                       <Button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="bg-[#2BAC3E] hover:bg-[#1F8A2F] text-white"
+                        className="bg-[#2BAC3E] hover:bg-[#1F8A2F] text-white rounded-full px-6 transition-all duration-300 shadow-md hover:shadow-lg"
                         disabled={isProcessing}
                       >
                         {isProcessing ? (
@@ -372,21 +374,21 @@ export default function ReadPDFPage() {
                   </Card>
                 </div>
               ) : (
-                <div className="h-full w-full relative">
+                <div className="h-full w-full relative rounded-xl overflow-hidden shadow-lg border border-gray-100">
                   <Button 
                     onClick={handleReset}
                     variant="outline" 
                     size="icon"
-                    className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
+                    className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white rounded-full w-8 h-8 shadow-md transition-all duration-300"
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  <div className="absolute top-2 left-2 z-10 bg-white/80 py-1 px-3 rounded-md text-sm font-medium">
+                  <div className="absolute top-3 left-3 z-10 bg-white/90 py-1.5 px-4 rounded-full text-sm font-medium shadow-md">
                     {pdfName}
                   </div>
                   <iframe 
                     src={`${pdfUrl}#toolbar=0`} 
-                    className="w-full h-full border border-gray-200 rounded-lg"
+                    className="w-full h-full rounded-xl"
                     title="PDF Viewer"
                   />
                 </div>
@@ -395,29 +397,29 @@ export default function ReadPDFPage() {
           </main>
         </ResizablePanel>
         
-        <ResizableHandle withHandle className="bg-gray-200 border-l border-r border-gray-300" />
+        <ResizableHandle withHandle className="bg-gradient-to-b from-gray-100 to-gray-200 border-l border-r border-gray-200" />
         
         {/* Chat Panel */}
         <ResizablePanel defaultSize={30} minSize={25} maxSize={50} className="flex flex-col">
           <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 flex items-center">
               <MessageSquare className="h-5 w-5 mr-2 text-[#2BAC3E]" />
-              Chat with PDF
+              AI Assistant
             </h2>
             {pdfSessionId ? (
               <div className="mt-1 flex items-center text-xs text-green-600">
-                <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                PDF processed and ready for questions
+                <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                Ready to assist with document insights
               </div>
             ) : pdfUrl && isProcessing ? (
-              <div className="mt-1 flex items-center text-xs text-orange-600">
+              <div className="mt-1 flex items-center text-xs text-blue-600">
                 <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                Processing PDF...
+                Analyzing document content...
               </div>
             ) : null}
           </div>
           
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4 bg-gradient-to-br from-white to-[#F8F9FF]">
             <div className="space-y-4">
               <AnimatePresence mode="wait">
                 {messages.length === 0 && !pdfUrl ? (
@@ -428,9 +430,11 @@ export default function ReadPDFPage() {
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center justify-center h-64 text-center"
                   >
-                    <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-                    <p className="text-gray-500 max-w-xs">
-                      Upload a PDF to start chatting
+                    <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                      <MessageSquare className="h-8 w-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 max-w-xs bg-white/50 backdrop-blur-sm p-3 rounded-xl">
+                      Upload a PDF to start the conversation
                     </p>
                   </motion.div>
                 ) : messages.length === 0 && pdfUrl ? (
@@ -441,9 +445,11 @@ export default function ReadPDFPage() {
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center justify-center h-64 text-center"
                   >
-                    <PDFIcon className="h-12 w-12 text-[#2BAC3E]/30 mb-4" />
-                    <p className="text-gray-500 max-w-xs">
-                      {isProcessing ? "Processing PDF..." : "Ask questions about the PDF content"}
+                    <div className="w-16 h-16 rounded-full bg-[#2BAC3E]/5 flex items-center justify-center mb-4">
+                      <PDFIcon className="h-8 w-8 text-[#2BAC3E]/40" />
+                    </div>
+                    <p className="text-gray-500 max-w-xs bg-white/50 backdrop-blur-sm p-3 rounded-xl">
+                      {isProcessing ? "Analyzing document content..." : "Ask questions about your document"}
                     </p>
                   </motion.div>
                 ) : (
@@ -455,10 +461,10 @@ export default function ReadPDFPage() {
                       className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div 
-                        className={`max-w-[80%] rounded-lg p-3 ${
+                        className={`max-w-[80%] rounded-2xl p-4 ${
                           message.role === "user" 
-                            ? "bg-[#2BAC3E] text-white" 
-                            : "bg-gray-100 text-gray-800"
+                            ? "bg-gradient-to-r from-[#2BAC3E] to-[#26963A] text-white shadow-md" 
+                            : "bg-white border border-gray-100 text-gray-800 shadow-sm"
                         }`}
                       >
                         <div className="text-sm prose prose-sm max-w-none">
@@ -481,9 +487,13 @@ export default function ReadPDFPage() {
                     exit={{ opacity: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-gray-100 rounded-lg p-3 flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                      <p className="text-sm text-gray-500">Thinking...</p>
+                    <div className="bg-white border border-gray-100 rounded-2xl p-3 flex items-center space-x-3 shadow-sm">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-[#2BAC3E] animate-pulse" style={{ animationDelay: "0ms" }}></div>
+                        <div className="w-2 h-2 rounded-full bg-[#2BAC3E] animate-pulse" style={{ animationDelay: "300ms" }}></div>
+                        <div className="w-2 h-2 rounded-full bg-[#2BAC3E] animate-pulse" style={{ animationDelay: "600ms" }}></div>
+                      </div>
+                      <p className="text-sm text-gray-500">Processing...</p>
                     </div>
                   </motion.div>
                 )}
@@ -497,7 +507,7 @@ export default function ReadPDFPage() {
               <Input
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={pdfSessionId ? "Ask a question about the PDF..." : isProcessing ? "Processing PDF..." : "Upload a PDF first"}
+                placeholder={pdfSessionId ? "Ask anything about your document..." : isProcessing ? "Analyzing document..." : "Upload a PDF first"}
                 disabled={!pdfSessionId || isLoading || isProcessing}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -505,17 +515,17 @@ export default function ReadPDFPage() {
                     handleSendMessage();
                   }
                 }}
-                className="flex-1 border-gray-300 focus:ring-[#2BAC3E] focus:border-[#2BAC3E]"
+                className="flex-1 border-gray-200 focus:ring-[#2BAC3E] focus:border-[#2BAC3E] rounded-full py-6 pl-4 shadow-sm transition-all duration-300"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!pdfSessionId || !inputMessage.trim() || isLoading || isProcessing}
-                className="bg-[#2BAC3E] hover:bg-[#1F8A2F] text-white"
+                className="bg-[#2BAC3E] hover:bg-[#1F8A2F] text-white rounded-full w-12 h-12 shadow-md hover:shadow-lg transition-all duration-300"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 )}
               </Button>
             </div>
