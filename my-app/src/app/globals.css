@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  
+  --card: #ffffff;
+  --card-foreground: #171717;
+  
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  
+  --primary: #2BAC3E;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  
+  --accent: #f8fafc;
+  --accent-foreground: #0f172a;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #171717;
+  
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    
+    --card: #171717;
+    --card-foreground: #ededed;
+    
+    --popover: #171717;
+    --popover-foreground: #ededed;
+    
+    --primary: #1F8A2F;
+    --primary-foreground: #ffffff;
+    
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+    
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+    
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    
+    --border: #1e293b;
+    --input: #1e293b;
+    --ring: #cbd5e1;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  margin-bottom: 0.75em;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 0.75em;
+  padding-left: 1em;
+}
+
+.prose li {
+  margin-bottom: 0.25em;
+}
+
+.prose pre {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.5em;
+  border-radius: 0.25em;
+  overflow-x: auto;
+}
+
+.prose code {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.1em 0.3em;
+  border-radius: 0.25em;
+}
