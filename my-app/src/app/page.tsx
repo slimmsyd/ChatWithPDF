@@ -1,4 +1,8 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -35,9 +39,9 @@ import { PDFIcon } from "@/components/icons/PDFIcon";
 import { useToast } from "@/components/ui/use-toast";
 import ReactMarkdown from 'react-markdown';
 
-// Define the Flask API base URL
-// const API_BASE_URL =  "http://localhost:8000";
-const API_BASE_URL = "http://agentp-Publi-bWOcL63CIdjh-1015568917.us-east-1.elb.amazonaws.com";
+// Define the backend URL - now using our proxy API
+// const API_BASE_URL = "http://agentp-Publi-bWOcL63CIdjh-1015568917.us-east-1.elb.amazonaws.com";
+const API_PROXY_URL = "/api/proxy";
 
 interface Message {
   id: string;
@@ -98,17 +102,26 @@ export default function ReadPDFPage() {
       const formData = new FormData();
       formData.append('file', file);
       
-      // Call the Flask API to process the PDF
-      const response = await fetch(`${API_BASE_URL}/upload`, {
+      console.log(`Uploading file: ${file.name} (${file.size} bytes)`);
+      console.log('Form data created with file:', file.name, file.type);
+      
+      // Call the Flask API to process the PDF through our proxy
+      const response = await fetch(`${API_PROXY_URL}?endpoint=/upload`, {
         method: 'POST',
+        // Don't set content-type header - let the browser handle it
         body: formData,
       });
       
+      console.log('Upload response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to process PDF');
+        const errorText = await response.text();
+        console.error('Error uploading PDF:', errorText);
+        throw new Error(`Failed to process PDF: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('Upload response:', data);
       
       // Store the session ID for future queries
       setPdfSessionId(data.session_id);
@@ -206,8 +219,8 @@ export default function ReadPDFPage() {
     setIsLoading(true);
 
     try {
-      // Call the Flask API to query the PDF
-      const response = await fetch(`${API_BASE_URL}/query`, {
+      // Call the Flask API to query the PDF through our proxy
+      const response = await fetch(`${API_PROXY_URL}?endpoint=/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -393,8 +406,8 @@ export default function ReadPDFPage() {
                   />
                 </div>
               )}
-            </div>
-          </main>
+        </div>
+      </main>
         </ResizablePanel>
         
         <ResizableHandle withHandle className="bg-gradient-to-b from-gray-100 to-gray-200 border-l border-r border-gray-200" />

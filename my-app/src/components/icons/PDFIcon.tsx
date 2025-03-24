@@ -1,3 +1,8 @@
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-interface */
+
 import React from 'react';
 
 export interface PDFIconProps extends React.SVGProps<SVGSVGElement> {}

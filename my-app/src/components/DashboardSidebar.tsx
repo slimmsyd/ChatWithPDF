@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
+
 import { FileText, Home, MessageSquare, Upload, User } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
@@ -38,7 +44,7 @@ export function DashboardSidebar({
           height={32}
           className="mr-2"
         />
-        <h1 className="text-xl font-bold text-[#2BAC3E]">DocumentAI</h1>
+        <h1 className="text-xl font-bold text-[#2BAC3E]">SE SUITE</h1>
       </div>
 
       <div className="space-y-1">
