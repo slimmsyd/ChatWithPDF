@@ -83,9 +83,18 @@ export default function ReadPDFPage() {
   const processFile = async (file?: File) => {
     if (!file) return;
     
+    // Check file type
     if (file.type !== "application/pdf") {
       setDragError("Only PDF files are accepted");
       setTimeout(() => setDragError(null), 3000);
+      return;
+    }
+    
+    // Check file size (50MB max)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      setDragError(`File size exceeds the maximum allowed size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      setTimeout(() => setDragError(null), 5000);
       return;
     }
     
@@ -97,6 +106,15 @@ export default function ReadPDFPage() {
     // Set processing state
     setIsProcessing(true);
     
+    // Add a processing message to inform the user
+    const uploadingMessage: Message = {
+      id: Date.now().toString(),
+      content: `📤 Uploading "${file.name}" (${(file.size / (1024 * 1024)).toFixed(2)}MB)...`,
+      role: "assistant",
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, uploadingMessage]);
+    
     try {
       // Create form data for API call
       const formData = new FormData();
@@ -105,19 +123,33 @@ export default function ReadPDFPage() {
       console.log(`Uploading file: ${file.name} (${file.size} bytes)`);
       console.log('Form data created with file:', file.name, file.type);
       
+      // Set timeout for large files - 5 minutes max
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+      
       // Call the Flask API to process the PDF through our proxy
       const response = await fetch(`${API_PROXY_URL}?endpoint=/upload`, {
         method: 'POST',
         // Don't set content-type header - let the browser handle it
         body: formData,
+        signal: controller.signal,
       });
       
+      clearTimeout(timeoutId);
       console.log('Upload response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error uploading PDF:', errorText);
-        throw new Error(`Failed to process PDF: ${errorText}`);
+        
+        // Check for specific error types
+        if (response.status === 413) {
+          throw new Error(`File size too large. Please upload a smaller PDF (under 50MB).`);
+        } else if (response.status === 504) {
+          throw new Error(`Upload timed out. Please try with a smaller PDF or check your connection.`);
+        } else {
+          throw new Error(`Failed to process PDF: ${errorText}`);
+        }
       }
       
       const data = await response.json();
@@ -126,13 +158,15 @@ export default function ReadPDFPage() {
       // Store the session ID for future queries
       setPdfSessionId(data.session_id);
       
-      // System message to inform PDF is loaded
-      const loadedMessage: Message = {
-        id: Date.now().toString(),
-        content: `PDF "${file.name}" has been processed. You can now ask questions about it.`,
-        role: "assistant",
-        timestamp: new Date()
-      };
+      // Update the uploading message to show success
+      setMessages(prev => prev.map(msg => 
+        msg.id === uploadingMessage.id 
+          ? {
+              ...msg,
+              content: `✅ PDF "${file.name}" has been uploaded and processed successfully.`
+            }
+          : msg
+      ));
       
       // Add the automatic summary message
       const summaryMessage: Message = {
@@ -142,8 +176,8 @@ export default function ReadPDFPage() {
         timestamp: new Date()
       };
       
-      // Add both messages
-      setMessages(prev => [...prev, loadedMessage, summaryMessage]);
+      // Add the summary message
+      setMessages(prev => [...prev, summaryMessage]);
       
       toast({
         title: "PDF Processed",
@@ -154,18 +188,19 @@ export default function ReadPDFPage() {
     } catch (error) {
       console.error('Error processing PDF:', error);
       
-      // Show error message
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: `There was an error processing "${file.name}". Please try again.`,
-        role: "assistant",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      // Update the uploading message to show failure
+      setMessages(prev => prev.map(msg => 
+        msg.id === uploadingMessage.id 
+          ? {
+              ...msg,
+              content: `❌ Upload failed: ${(error as Error).message}`
+            }
+          : msg
+      ));
       
       toast({
         title: "Error",
-        description: "Failed to process PDF. Please try again.",
+        description: (error as Error).message || "Failed to process PDF. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -10,6 +10,9 @@ const ALLOWED_ENDPOINTS = [
   { path: '/query', methods: ['POST'] },
 ];
 
+// Maximum file size in bytes (50MB)
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
 /**
  * Generic proxy handler that forwards requests to the AWS backend
  */
@@ -37,6 +40,12 @@ async function proxyRequest(request: NextRequest, endpoint: string) {
           if (value instanceof File) {
             console.log(`- ${key}: File (${value.name}, ${value.size} bytes, ${value.type})`);
             
+            // Check file size
+            if (value.size > MAX_FILE_SIZE) {
+              console.error(`File too large: ${value.size} bytes (max: ${MAX_FILE_SIZE} bytes)`);
+              throw new Error(`File size exceeds the maximum allowed size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+            }
+            
             // Create a new file object from the original
             const fileBlob = new Blob([await value.arrayBuffer()], { type: value.type });
             const file = new File([fileBlob], value.name, { 
@@ -45,6 +54,7 @@ async function proxyRequest(request: NextRequest, endpoint: string) {
             });
             
             newFormData.append(key, file);
+            console.log(`Successfully processed file: ${value.name}`);
           } else {
             console.log(`- ${key}: ${value}`);
             newFormData.append(key, value);
@@ -54,7 +64,13 @@ async function proxyRequest(request: NextRequest, endpoint: string) {
         body = newFormData;
       } catch (error) {
         console.error('Error parsing form data:', error);
-        throw new Error('Failed to parse form data');
+        if ((error as Error).message.includes('File size exceeds')) {
+          return NextResponse.json(
+            { error: 'File too large', message: (error as Error).message },
+            { status: 413 }
+          );
+        }
+        throw new Error('Failed to parse form data: ' + (error as Error).message);
       }
     } else if (contentType.includes('application/json')) {
       console.log('Handling JSON data...');
@@ -92,37 +108,64 @@ async function proxyRequest(request: NextRequest, endpoint: string) {
           throw new Error('No file found in the form data');
         }
         
+        console.log(`Uploading file: ${file.name} (${file.size} bytes)`);
+        
         // Create a new form with just the file
         const directFormData = new FormData();
         directFormData.append('file', file);
         
-        const response = await fetch(`${AWS_BACKEND_URL}${endpoint}`, {
-          method: 'POST',
-          body: directFormData,
-        });
-        
-        console.log(`Backend responded with status: ${response.status}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Backend error (${response.status}):`, errorText);
-          return NextResponse.json(
-            { error: 'Backend service returned an error', details: errorText },
-            { status: response.status }
-          );
+        // Set a timeout for large files
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
+        try {
+          const response = await fetch(`${AWS_BACKEND_URL}${endpoint}`, {
+            method: 'POST',
+            body: directFormData,
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          
+          console.log(`Backend responded with status: ${response.status}`);
+          
+          if (!response.ok) {
+            let errorText;
+            try {
+              errorText = await response.text();
+            } catch (e) {
+              errorText = 'Could not read error response';
+            }
+            
+            console.error(`Backend error (${response.status}):`, errorText);
+            return NextResponse.json(
+              { error: 'Backend service returned an error', details: errorText },
+              { status: response.status }
+            );
+          }
+          
+          // Get the response data
+          const responseData = await response.json();
+          console.log('Response data:', JSON.stringify(responseData).substring(0, 200) + '...');
+          
+          // Return the proxied response
+          return NextResponse.json(responseData, {
+            status: response.status,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (error) {
+          clearTimeout(timeoutId);
+          if ((error as any).name === 'AbortError') {
+            console.error('Upload request timed out');
+            return NextResponse.json(
+              { error: 'Upload timed out', message: 'The upload took too long and was aborted' },
+              { status: 504 }
+            );
+          }
+          throw error;
         }
-        
-        // Get the response data
-        const responseData = await response.json();
-        console.log('Response data:', JSON.stringify(responseData).substring(0, 200) + '...');
-        
-        // Return the proxied response
-        return NextResponse.json(responseData, {
-          status: response.status,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
       } catch (error) {
         console.error('File upload error:', error);
         throw error;
@@ -170,12 +213,31 @@ async function proxyRequest(request: NextRequest, endpoint: string) {
     }
   } catch (error) {
     console.error('Proxy error:', error);
+    // Check if this is a size-related error
+    const errorMessage = (error as Error).message;
+    if (errorMessage.includes('size limit') || errorMessage.includes('too large')) {
+      return NextResponse.json(
+        { error: 'Request too large', message: errorMessage },
+        { status: 413 }
+      );
+    }
     return NextResponse.json(
-      { error: 'Failed to proxy request to backend service', message: (error as Error).message },
+      { error: 'Failed to proxy request to backend service', message: errorMessage },
       { status: 500 }
     );
   }
 }
+
+// Export config to increase body size limit
+export const config = {
+  runtime: 'nodejs',
+  api: {
+    bodyParser: false // Turn off built-in bodyParser so we can handle form data manually
+  },
+};
+
+// This defines the maximum size for Next.js API routes - match the free tier
+export const maxDuration = 10; // 10 seconds (free tier limit)
 
 export async function POST(request: NextRequest) {
   // Extract the target endpoint from the URL

@@ -10,15 +10,15 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pdf-parse'],
     // Allow processing of large request bodies
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: '50mb',
     },
   },
   // Configure Next.js API routes for larger payloads
   api: {
     bodyParser: {
-      sizeLimit: '10mb',
+      sizeLimit: '50mb',
     },
-    responseLimit: '10mb',
+    responseLimit: '50mb',
   },
 }
 
