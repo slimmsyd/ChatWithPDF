@@ -41,7 +41,8 @@ import ReactMarkdown from 'react-markdown';
 
 // Define the backend URL - now using our proxy API
 // const API_BASE_URL = "http://agentp-Publi-bWOcL63CIdjh-1015568917.us-east-1.elb.amazonaws.com";
-const API_PROXY_URL = "/api/proxy";
+const API_BASE_URL = "https://agentp-Publi-bWOcL63CIdjh-1015568917.us-east-1.elb.amazonaws.com";
+// const API_PROXY_URL = "/api/proxy";
 
 interface Message {
   id: string;
@@ -91,12 +92,12 @@ export default function ReadPDFPage() {
     }
     
     // Check file size (50MB max)
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
-    if (file.size > MAX_FILE_SIZE) {
-      setDragError(`File size exceeds the maximum allowed size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
-      setTimeout(() => setDragError(null), 5000);
-      return;
-    }
+    // const MAX_FILE_SIZE = 75 * 1024 * 1024; // 50MB in bytes
+    // if (file.size > MAX_FILE_SIZE) {
+    //   setDragError(`File size exceeds the maximum allowed size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+    //   setTimeout(() => setDragError(null), 5000);
+    //   return;
+    // }
     
     // Create object URL for display
     const url = URL.createObjectURL(file);
@@ -128,11 +129,13 @@ export default function ReadPDFPage() {
       const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
       
       // Call the Flask API to process the PDF through our proxy
-      const response = await fetch(`${API_PROXY_URL}?endpoint=/upload`, {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         // Don't set content-type header - let the browser handle it
         body: formData,
         signal: controller.signal,
+        // Add CORS mode
+        mode: 'cors',
       });
       
       clearTimeout(timeoutId);
@@ -145,10 +148,14 @@ export default function ReadPDFPage() {
         // Check for specific error types
         if (response.status === 413) {
           throw new Error(`File size too large. Please upload a smaller PDF (under 50MB).`);
-        } else if (response.status === 504) {
+        } else if (response.status === 504 || response.status === 408) {
           throw new Error(`Upload timed out. Please try with a smaller PDF or check your connection.`);
+        } else if (response.status === 429) {
+          throw new Error(`Rate limit exceeded. Please wait a moment and try again.`);
+        } else if (response.status === 403) {
+          throw new Error(`Access denied. You may not have permission to upload files.`);
         } else {
-          throw new Error(`Failed to process PDF: ${errorText}`);
+          throw new Error(`Failed to process PDF: ${errorText || response.statusText}`);
         }
       }
       
@@ -255,11 +262,13 @@ export default function ReadPDFPage() {
 
     try {
       // Call the Flask API to query the PDF through our proxy
-      const response = await fetch(`${API_PROXY_URL}?endpoint=/query`, {
+      const response = await fetch(`${API_BASE_URL}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        mode: 'cors',
         body: JSON.stringify({
           session_id: pdfSessionId,
           question: userMessage.content,
@@ -272,7 +281,18 @@ export default function ReadPDFPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get answer');
+        const errorText = await response.text();
+        console.error('Error querying PDF:', errorText, response.status);
+        
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        } else if (response.status === 404) {
+          throw new Error('Session not found. Please upload your PDF again.');
+        } else if (response.status === 400) {
+          throw new Error('Invalid request. Please try with a different question.');
+        } else {
+          throw new Error(`Failed to get answer: ${errorText || response.statusText}`);
+        }
       }
       
       const data = await response.json();
